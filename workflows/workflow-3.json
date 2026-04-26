@@ -1,0 +1,1093 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "n1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "n2",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "single_user_mode",
+              "value": "={{ $json.single_user_mode ?? 'false' }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "single_user_chat_id",
+              "value": "={{ $json.single_user_chat_id ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Check Single User Mode",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://YOUR_SUPABASE_PROJECT_URL/rest/v1/weekly_schedule?week_number=eq.' + new Date().getFullYear() + String(Math.ceil((new Date() - new Date(new Date().getFullYear(),0,1)) / 604800000)).padStart(2,'0') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n4",
+      "name": "Get Weekly Schedule",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        752,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are EduBot, an AI tutor assistant for Northumbria University Masters in AI Technology students. Generate weekly briefing messages in Telegram Markdown format.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate a friendly, motivating weekly briefing for Masters in AI Technology students.\\n\\nThis week schedule data: {{ JSON.stringify($json) }}\\n\\nFormat with Telegram Markdown:\\n- Motivating opening line\\n- Section per module: topics this week + any deadlines\\n- Key Focus section: top 3 priorities\\n- Closing motivational line\\nKeep under 400 words. Use *bold* for headings.\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 800\n}",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "Generate Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZQgh8pCPX1lVqk8F",
+          "name": "OpenAI HTTP Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "briefing_text",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "single_user_mode",
+              "value": "={{ $('Check Single User Mode').item.json.single_user_mode }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "single_user_chat_id",
+              "value": "={{ $('Check Single User Mode').item.json.single_user_chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n6",
+      "name": "Extract Briefing Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.single_user_mode }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "single"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n7",
+      "name": "Route by Mode",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        1504,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Briefing Text').item.json.single_user_chat_id }}",
+        "text": "={{ '📅 *This Week\\'s Briefing*\\n\\n' + $('Extract Briefing Text').item.json.briefing_text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "n8",
+      "name": "Send Single User Brief",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        304
+      ],
+      "webhookId": "f96fa537-7922-45c2-806c-7160c82d7661",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://YOUR_SUPABASE_PROJECT_URL/rest/v1/user_sessions?last_active=gte.' + new Date(Date.now() - 30*24*60*60*1000).toISOString() + '&select=telegram_user_id,chat_id' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "n9",
+      "name": "Get All Active Users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "n10",
+      "name": "Send To Each User",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ '📅 *Your Weekly Briefing — ' + new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) + '*\\n\\n' + $('Extract Briefing Text').item.json.briefing_text + '\\n\\n_Type /quiz to test yourself on this week topics!_' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "n11",
+      "name": "Send Weekly Brief",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2256,
+        512
+      ],
+      "webhookId": "1183b1c3-340f-4c04-86c4-842ba26542ec",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "91172395-2996-4609-ad14-407c529ea633",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "single_user_mode",
+              "value": "={{ $json.single_user_mode ?? 'false' }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "single_user_chat_id",
+              "value": "={{ $json.single_user_chat_id ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7fb4a60b-c1d3-4139-8c88-de5314b6fca9",
+      "name": "Check Single User Mode1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "d64b527f-1a18-4cd0-a1af-5db5d16c921b",
+      "name": "Get Weekly Schedule1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        1152
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ddde571a-72b9-400f-ac84-4c360ef49427",
+      "name": "Generate Briefing1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1728,
+        1152
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "gHjkZaeOufWyoFfm",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "briefing_text",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "single_user_mode",
+              "value": "={{ $('Check Single User Mode1').item.json.single_user_mode }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "single_user_chat_id",
+              "value": "={{ $('Check Single User Mode1').item.json.single_user_chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0878b5fa-f5bc-4d66-84dc-37f369ae3c75",
+      "name": "Extract Briefing Text1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1952,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "e5a107ef-9bb9-4ded-bbc1-708417e83da6",
+      "name": "Route by Mode1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        2176,
+        1152
+      ],
+      "retryOnFail": true,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Briefing Text1').item.json.single_user_chat_id }}",
+        "text": "={{ '📅 *This Week\\'s Briefing*\\n\\n' + $('Extract Briefing Text1').item.json.briefing_text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "56113d85-2538-4ac7-bf81-40d9e9a329fe",
+      "name": "Send Single User Brief1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        1152
+      ],
+      "webhookId": "0b0635be-a1aa-4be3-9f2a-0873ee1282e1",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c32fcd47-dacc-4426-81cb-a499e648ada0",
+      "name": "Get All Active Users1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        1472
+      ],
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": true
+        }
+      },
+      "id": "78cf198b-99f4-4a94-b630-26c4c584f650",
+      "name": "Send To Each User1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1280,
+        1472
+      ],
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ '📅 *Your Weekly Briefing — ' + new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) + '*\\n\\n' + $('Extract Briefing Text1').item.json.briefing_text + '\\n\\n_Type /quiz to test yourself on this week topics!_' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "637f1e48-8daf-4c33-805c-c92825783f37",
+      "name": "Send Weekly Brief1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        1472
+      ],
+      "webhookId": "1223b6f1-16c3-42aa-a05b-610876f0a87d",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "8db7229c-0aba-4e0e-810a-37629640cd91",
+      "name": "Schedule Trigger2",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "single_user_mode",
+              "value": "={{ $json.single_user_mode ?? 'false' }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "single_user_chat_id",
+              "value": "={{ $json.single_user_chat_id ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b6bc7bda-6de8-4f3c-8369-722ced47bb98",
+      "name": "Check Single User Mode2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "7c9b484c-0e08-48a0-8a56-3ef8b03e6219",
+      "name": "Get Weekly Schedule2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        1808
+      ],
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "cb7a7e27-2c58-4d5f-95ba-960b5d31ff2c",
+      "name": "Generate Briefing2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1712,
+        1808
+      ],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "briefing_text",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "single_user_mode",
+              "value": "={{ $('Check Single User Mode2').item.json.single_user_mode }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "single_user_chat_id",
+              "value": "={{ $('Check Single User Mode2').item.json.single_user_chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0793945e-3bfb-456a-8177-4d3c79b93519",
+      "name": "Extract Briefing Text2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1936,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "8f2e5fad-3970-4360-9a30-7c69949bcb46",
+      "name": "Route by Mode2",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        2160,
+        1808
+      ],
+      "retryOnFail": true,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Briefing Text2').item.json.single_user_chat_id }}",
+        "text": "={{ '📅 *This Week\\'s Briefing*\\n\\n' + $('Extract Briefing Text2').item.json.briefing_text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "bdd3cf3a-9f6b-4ca8-a1bd-94ca634c9f00",
+      "name": "Send Single User Brief2",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2384,
+        1808
+      ],
+      "webhookId": "0b0635be-a1aa-4be3-9f2a-0873ee1282e1",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_SERVICE_ROLE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "366fffca-3b71-45dc-8982-516ea1559336",
+      "name": "Get All Active Users2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        2128
+      ],
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": true
+        }
+      },
+      "id": "bf23b49f-d2db-4692-89a8-daedf116c737",
+      "name": "Send To Each User2",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1264,
+        2128
+      ],
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ '📅 *Your Weekly Briefing — ' + new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) + '*\\n\\n' + $('Extract Briefing Text2').item.json.briefing_text + '\\n\\n_Type /quiz to test yourself on this week topics!_' }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "27ef19af-41d1-4f16-a4b5-6f8bda66c885",
+      "name": "Send Weekly Brief2",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        2128
+      ],
+      "webhookId": "1223b6f1-16c3-42aa-a05b-610876f0a87d",
+      "retryOnFail": true
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Single User Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Single User Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Single User Mode": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing": {
+      "main": [
+        [
+          {
+            "node": "Extract Briefing Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Briefing Text": {
+      "main": [
+        [
+          {
+            "node": "Route by Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Mode": {
+      "main": [
+        [
+          {
+            "node": "Send Single User Brief",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get All Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Active Users": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Each User": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Brief",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Send Weekly Brief": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Check Single User Mode1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Single User Mode1": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Schedule1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Schedule1": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing1": {
+      "main": [
+        [
+          {
+            "node": "Extract Briefing Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Briefing Text1": {
+      "main": [
+        [
+          {
+            "node": "Route by Mode1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Mode1": {
+      "main": [
+        [
+          {
+            "node": "Send Single User Brief1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Active Users1": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Each User1": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Brief1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weekly Brief1": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Check Single User Mode2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Single User Mode2": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Schedule2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Schedule2": {
+      "main": [
+        [
+          {
+            "node": "Generate Briefing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Briefing2": {
+      "main": [
+        [
+          {
+            "node": "Extract Briefing Text2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Briefing Text2": {
+      "main": [
+        [
+          {
+            "node": "Route by Mode2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Mode2": {
+      "main": [
+        [
+          {
+            "node": "Send Single User Brief2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Active Users2": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Each User2": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Brief2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weekly Brief2": {
+      "main": [
+        [
+          {
+            "node": "Send To Each User2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

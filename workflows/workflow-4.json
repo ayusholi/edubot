@@ -1,0 +1,618 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "n1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "85774c54-31d7-4b33-b66c-65eb64391dc9"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "n2",
+      "name": "Route Quiz Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        512,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "HTTP-Referer",
+              "value": "http://localhost:5678"
+            },
+            {
+              "name": "X-Title",
+              "value": "EduBot"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemma-4-26b-a4b-it:free\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an educational quiz generator for a Masters in AI Technology programme at Northumbria University. You ONLY generate questions related to these modules: Programming for AI, IoT for AI, Machine Learning on Cloud, Leadership in Digital Age, Professional Practice, Contemporary Computing and Digital Technology, Information Governance and Cyber Security. Always return valid JSON only, no other text.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate a 5-question multiple choice quiz about: {{ $json.quiz_topic }}\\n\\nUse this course material if available:\\n{{ $json.course_content ?? 'Use general knowledge about the topic.' }}\\n\\nReturn ONLY this exact JSON structure (no markdown, no explanation):\\n{\\\"questions\\\":[{\\\"question\\\":\\\"...\\\",\\\"options\\\":[\\\"A) ...\\\",\\\"B) ...\\\",\\\"C) ...\\\",\\\"D) ...\\\"],\\\"correct\\\":\\\"A\\\",\\\"explanation\\\":\\\"...\\\"}]}\"\n    }\n  ],\n  \"temperature\": 0.5,\n  \"max_tokens\": 1500\n}",
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Generate Quiz Questions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "paFcUHaGmuSqV28f",
+          "name": "Gemma"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst content = response.choices[0].message.content;\n\nconst cleaned = content\n  .replace(/```json/g, '')\n  .replace(/```/g, '')\n  .trim();\n\nlet quiz;\ntry {\n  quiz = JSON.parse(cleaned);\n} catch(e) {\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  quiz = match ? JSON.parse(match[0]) : { questions: [] };\n}\n\nif (!quiz.questions || quiz.questions.length === 0) {\n  return [{\n    json: {\n      error: true,\n      chat_id: '',\n      message: \"❌ Sorry! I can only quiz you on your course modules.\"\n    }\n  }];\n}\n\nconst triggerData = $('Route Quiz Action').item.json;\n\nconst quizState = {\n  questions: quiz.questions,\n  current_question: 0,\n  score: 0,\n  total: quiz.questions.length,\n  topic: triggerData.quiz_topic,\n  answers_given: []\n};\n\nreturn [{\n  json: {\n    quiz_state: quizState,\n    first_question: quiz.questions[0],\n    topic: triggerData.quiz_topic,\n    telegram_user_id: triggerData.telegram_user_id,\n    chat_id: triggerData.chat_id\n  }\n}];"
+      },
+      "id": "n4",
+      "name": "Parse Quiz JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co/rest/v1/user_sessions?telegram_user_id=eq.{{ $json.telegram_user_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNjk1NDgsImV4cCI6MjA5MTc0NTU0OH0.XIkU4p3MF8qcMP8xX4hZhI8bYVMbIIN-qhnIXN4jEhc"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjE2OTU0OCwiZXhwIjoyMDkxNzQ1NTQ4fQ.S4LRavRkqT_J1WsjpNzEuI-LJ0_o_PDiB401cf2e3HQ"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mode\": \"quiz\",\n  \"quiz_state\": {{ JSON.stringify($json.quiz_state) }},\n  \"last_active\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "n5",
+      "name": "Save Quiz State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const quizState = $('Parse Quiz JSON').item.json.quiz_state;\nconst q = quizState.questions[0];\n\nconst text = `🎮 *Quiz: ${quizState.topic}*\\n\\n*Question 1 of ${quizState.total}:*\\n\\n${q.question}\\n\\n${q.options.join('\\n')}`;\n\nreturn [{\n  json: {\n    question_text: text,\n    chat_id: $('Parse Quiz JSON').item.json.chat_id\n  }\n}];"
+      },
+      "id": "n6",
+      "name": "Format First Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.question_text }}\n\nReply with *A*, *B*, *C*, or *D*",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "n7",
+      "name": "Send First Question",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        160
+      ],
+      "webhookId": "6130519c-0c1b-4614-9ed4-78ea3f78b39a",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst rawMessage = input.raw_message?.trim().toUpperCase() || '';\n\nlet quizState;\ntry {\n  quizState = typeof input.quiz_state === 'string' ? JSON.parse(input.quiz_state) : input.quiz_state;\n} catch(e) {\n  quizState = { questions: [], current_question: 0, score: 0, total: 0, answers_given: [] };\n}\n\nif (!quizState || !quizState.questions || quizState.questions.length === 0) {\n  return [{ json: { error: 'No active quiz', chat_id: input.chat_id, telegram_user_id: input.telegram_user_id } }];\n}\n\nconst currentQ = quizState.questions[quizState.current_question];\nconst userAnswer = rawMessage.charAt(0);\nconst isCorrect = userAnswer === currentQ.correct;\n\nif (isCorrect) quizState.score++;\nquizState.answers_given.push({ answer: userAnswer, correct: isCorrect });\nquizState.current_question++;\n\nconst isComplete = quizState.current_question >= quizState.total;\n\nlet feedbackText = isCorrect\n  ? `✅ *Correct!* Well done!\\n\\n_${currentQ.explanation}_`\n  : `❌ *Incorrect.* The correct answer was *${currentQ.correct}*.\\n\\n_${currentQ.explanation}_`;\n\nreturn [{\n  json: {\n    quiz_state: quizState,\n    feedback: feedbackText,\n    is_correct: isCorrect,\n    is_complete: isComplete,\n    chat_id: input.chat_id,\n    telegram_user_id: input.telegram_user_id,\n    current_question_index: quizState.current_question,\n    score: quizState.score,\n    total: quizState.total,\n    topic: quizState.topic\n  }\n}];"
+      },
+      "id": "n8",
+      "name": "Parse Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "706dd95f-30f5-401a-9f1b-0a49bfceb942",
+                    "leftValue": "={{ $json.is_complete }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "complete"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "n9",
+      "name": "Is Quiz Complete?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        1232,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co/rest/v1/user_sessions?telegram_user_id=eq.{{$json.telegram_user_id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNjk1NDgsImV4cCI6MjA5MTc0NTU0OH0.XIkU4p3MF8qcMP8xX4hZhI8bYVMbIIN-qhnIXN4jEhc"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjE2OTU0OCwiZXhwIjoyMDkxNzQ1NTQ4fQ.S4LRavRkqT_J1WsjpNzEuI-LJ0_o_PDiB401cf2e3HQ"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"quiz_state\": {{ JSON.stringify($json.quiz_state) }},\n  \"last_active\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {}
+      },
+      "id": "n10",
+      "name": "Update Quiz State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse Answer').item.json;\nconst quizState = data.quiz_state;\nconst nextQ = quizState.questions[quizState.current_question];\nconst questionNum = quizState.current_question + 1;\n\nconst nextText = `*Question ${questionNum} of ${quizState.total}:*\\n\\n${nextQ.question}\\n\\n${nextQ.options.join('\\n')}`;\n\nreturn [{\n  json: {\n    message_text: `${data.feedback}\\n\\n---\\n\\n${nextText}\\n\\nReply with *A*, *B*, *C*, or *D*`,\n    chat_id: data.chat_id\n  }\n}];"
+      },
+      "id": "n11",
+      "name": "Format Next Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "n12",
+      "name": "Send Next Question",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        352
+      ],
+      "webhookId": "3fb8fb66-a3c3-4f8e-b3d8-0191c17bd539",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co/rest/v1/user_sessions?telegram_user_id=eq.{{ $json.telegram_user_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNjk1NDgsImV4cCI6MjA5MTc0NTU0OH0.XIkU4p3MF8qcMP8xX4hZhI8bYVMbIIN-qhnIXN4jEhc"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjE2OTU0OCwiZXhwIjoyMDkxNzQ1NTQ4fQ.S4LRavRkqT_J1WsjpNzEuI-LJ0_o_PDiB401cf2e3HQ"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"mode\": \"chat\",\n  \"quiz_state\": null\n}",
+        "options": {}
+      },
+      "id": "n13",
+      "name": "Reset Quiz Session",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1488,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Parse Answer').item.json;\nconst { score, total, topic, feedback } = data;\nconst percentage = Math.round((score / total) * 100);\n\nlet grade = '';\nlet emoji = '';\nif (percentage === 100) { grade = 'Perfect Score! Outstanding! 🏆'; emoji = '🌟'; }\nelse if (percentage >= 80) { grade = 'Excellent work! 🎉'; emoji = '✨'; }\nelse if (percentage >= 60) { grade = 'Good effort! Keep studying! 💪'; emoji = '👍'; }\nelse { grade = \"Keep practicing! You'll get there! 📚\"; emoji = '🔄'; }\n\nconst reviewItems = data.quiz_state.answers_given\n  .map((a, i) => !a.correct ? `• Q${i+1}: ${data.quiz_state.questions[i].question.slice(0,60)}...\\n  ✓ Correct: ${data.quiz_state.questions[i].correct}` : null)\n  .filter(Boolean);\n\nconst reviewText = reviewItems.length > 0\n  ? `\\n\\n*Topics to review:*\\n${reviewItems.join('\\n\\n')}`\n  : '\\n\\n✅ You answered everything correctly!';\n\nconst finalText = `${feedback}\\n\\n---\\n\\n${emoji} *Quiz Complete!*\\n\\n📊 *Your Score: ${score}/${total} (${percentage}%)*\\n\\n${grade}${reviewText}\\n\\n_Type /quiz ${topic} to try again, or ask me about any topic!_`;\n\nreturn [{ json: { message_text: finalText, chat_id: data.chat_id } }];"
+      },
+      "id": "n14",
+      "name": "Build Final Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message_text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "n15",
+      "name": "Send Final Score",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        560
+      ],
+      "webhookId": "e70444a2-240b-4e18-bc86-944541bc7ded",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        256,
+        112
+      ],
+      "id": "835a42e6-fd73-4521-88f3-cd59b6779e9c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://drmtvmpynxgaqgeuouzs.supabase.co/rest/v1/documents?module=ilike.*{{$json.quiz_topic}}*&select=content&limit=5",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNjk1NDgsImV4cCI6MjA5MTc0NTU0OH0.XIkU4p3MF8qcMP8xX4hZhI8bYVMbIIN-qhnIXN4jEhc"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybXR2bXB5bnhnYXFnZXVvdXpzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjE2OTU0OCwiZXhwIjoyMDkxNzQ1NTQ4fQ.S4LRavRkqT_J1WsjpNzEuI-LJ0_o_PDiB401cf2e3HQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        160
+      ],
+      "id": "8a7d8d31-6950-4fba-8fbc-a3dd6d7b3c8c",
+      "name": "Fetch Course Content",
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Route Quiz Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Quiz Action": {
+      "main": [
+        [
+          {
+            "node": "Fetch Course Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Quiz Questions": {
+      "main": [
+        [
+          {
+            "node": "Parse Quiz JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Quiz JSON": {
+      "main": [
+        [
+          {
+            "node": "Save Quiz State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Quiz State": {
+      "main": [
+        [
+          {
+            "node": "Format First Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format First Question": {
+      "main": [
+        [
+          {
+            "node": "Send First Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Answer": {
+      "main": [
+        [
+          {
+            "node": "Is Quiz Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Quiz Complete?": {
+      "main": [
+        [
+          {
+            "node": "Reset Quiz Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Quiz State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Quiz State": {
+      "main": [
+        [
+          {
+            "node": "Format Next Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Next Question": {
+      "main": [
+        [
+          {
+            "node": "Send Next Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reset Quiz Session": {
+      "main": [
+        [
+          {
+            "node": "Build Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Final Score": {
+      "main": [
+        [
+          {
+            "node": "Send Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Route Quiz Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Course Content": {
+      "main": [
+        [
+          {
+            "node": "Generate Quiz Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Execute Workflow Trigger": [],
+    "When clicking ‘Execute workflow’": [
+      {
+        "action": "start",
+        "quiz_topic": "Python functions",
+        "chat_id": "734639934",
+        "telegram_user_id": "734639934"
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}
