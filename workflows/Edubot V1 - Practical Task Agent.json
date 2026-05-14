@@ -1,0 +1,308 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": \"uuid-string\",\n  \"course_name\": \"Programming for AI\",\n  \"week_number\": 3\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1312,
+        64
+      ],
+      "id": "9d6d5e8d-49aa-4e42-a9c6-dc961ea27ec4",
+      "name": "When Executed by Main Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "course_name",
+              "value": "={{ $json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "week_number",
+              "value": "={{ $json.week_number }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1088,
+        64
+      ],
+      "id": "753518bc-54a3-4266-93d6-21d4c2f89ff2",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-course",
+              "leftValue": "={{ $json.course_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-week",
+              "leftValue": "={{ $json.week_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -864,
+        64
+      ],
+      "id": "2a8af005-71fc-489d-92f5-c9947523641d",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "response",
+              "value": "I need to know which course and week you need a practical guide for. Could you confirm those details?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -656,
+        240
+      ],
+      "id": "350ec00c-92fe-4ce8-aa65-34eaf379dc7c",
+      "name": "Error - Missing Input"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "practical_guides",
+        "returnAll": true,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "course_name",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.course_name }}"
+            },
+            {
+              "keyName": "week_number",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.week_number }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        64
+      ],
+      "id": "edec35c8-d702-45c8-a4a5-346dc43d6729",
+      "name": "Fetch Practical Guides",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-guides",
+              "leftValue": "={{ $items(\"Fetch Practical Guides\").filter(i => i.json.id).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -432,
+        64
+      ],
+      "id": "de5c6347-3028-4c8e-b29a-8ff9519a2c6f",
+      "name": "Guides Found?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format all available guides into a clean Telegram message\nconst guides = $input.all();\nconst ctx = $('Set Input Fields').first().json;\n\nlet message = `📚 *Practical Guides — ${ctx.course_name}, Week ${ctx.week_number}*\\n\\n`;\n\nguides.forEach((item, index) => {\n  const g = item.json;\n  message += `*${index + 1}. ${g.title}*\\n`;\n  if (g.description) message += `${g.description}\\n`;\n  message += `🔗 [Open Guide](${g.guide_url})`;\n  if (g.has_solution) message += ` · ✅ Solution included`;\n  if (g.has_tips)     message += ` · 💡 Tips included`;\n  message += `\\n\\n`;\n});\n\nmessage += `_These guides are custom-built for Edubot — not official university materials._`;\n\nreturn [{ json: { response: message } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -48
+      ],
+      "id": "4d7a1e04-cd36-4f7d-a856-4eab959a995f",
+      "name": "Format Guides Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ng1",
+              "name": "response",
+              "value": "=No practical guide is available yet for *{{ $('Set Input Fields').first().json.course_name }}, Week {{ $('Set Input Fields').first().json.week_number }}*. Check back soon — we're adding new guides regularly! 🛠️",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        160
+      ],
+      "id": "436a2f4b-4d67-4078-918b-48705aeaab25",
+      "name": "No Guides Found"
+    }
+  ],
+  "connections": {
+    "When Executed by Main Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Fetch Practical Guides",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - Missing Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Practical Guides": {
+      "main": [
+        [
+          {
+            "node": "Guides Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guides Found?": {
+      "main": [
+        [
+          {
+            "node": "Format Guides Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Guides Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Main Agent": [
+      {
+        "user_id": "user-uuid-test-123",
+        "course_name": "Programming for AI",
+        "week_number": 3
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

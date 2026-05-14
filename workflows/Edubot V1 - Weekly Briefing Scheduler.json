@@ -1,0 +1,412 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -976,
+        16
+      ],
+      "id": "0c847495-77a9-48e6-9567-c040a88072e3",
+      "name": "Every Monday 8am"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "current_course",
+              "condition": "neq",
+              "keyValue": "={{ \"\" }}"
+            },
+            {
+              "keyName": "current_week",
+              "condition": "gt",
+              "keyValue": "0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        16
+      ],
+      "id": "0ee45740-221d-461e-9f29-d5e99add7428",
+      "name": "Get All Active Users",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "c94a06eb-3dab-4a52-8252-475e55291e0e",
+      "name": "Process One User at a Time",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a weekly briefing for:\n\nCourse: {{ $json.current_course }}\nWeek: {{ $json.current_week }}\n\nUse the search_course_materials tool to retrieve content for this course and week, then write the briefing.",
+        "options": {
+          "systemMessage": "=You are the Weekly Briefing Specialist for Edubot, an MSc AI tutor.\n\nWrite a very short, motivating weekly briefing for a student.\n\nRules:\n1. Use search_course_materials to retrieve content for the course and week.\n2. Write 2-4 sentences MAXIMUM — this is a quick Monday reminder, not a summary.\n3. Mention what the week focuses on in one sentence.\n4. Suggest one simple, specific action the student can take today.\n5. Warm, encouraging tone.\n6. Format for Telegram using Markdown.\n7. Never hallucinate.\n\nFormat:\n📅 *Week [N] Briefing — [Course Name]*\n\n[2-4 sentence briefing]\n\n💡 *Today's action:* [one specific action]\n\nGood luck this week! 🎓"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -272,
+        -160
+      ],
+      "id": "d9413ecf-3388-4904-a047-67cf6cf04a99",
+      "name": "Briefing Agent",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        64
+      ],
+      "id": "80819f16-6a12-4b8b-8644-1766cb8e2931",
+      "name": "OpenAI GPT-4o",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Edubot knowledge base for course content to generate the weekly briefing. Filter by course_name and week_number.",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_document_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "course_name",
+                "value": "={{ $('Process One User at a Time').item.json.current_course }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $('Process One User at a Time').item.json.current_week }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        64
+      ],
+      "id": "2d7ae0c4-7ed1-4afb-8822-a2b2be5611ec",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        240
+      ],
+      "id": "b27ffeb4-563a-485a-b8f0-b1009cf70959",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Process One User at a Time').item.json.telegram_chat_id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        -256
+      ],
+      "id": "89d0b9e7-d73a-470d-a4d3-a36efff90fe2",
+      "name": "Send Briefing via Telegram",
+      "webhookId": "3844aae6-9908-421f-9e6a-da93d49a8d77",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "weekly_briefings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.id }}"
+            },
+            {
+              "fieldId": "briefing_text",
+              "fieldValue": "={{ $('Send Briefing via Telegram').first().json.result.text }}"
+            },
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.current_course }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.current_week }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "sent"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        16
+      ],
+      "id": "ea600539-8265-412e-afc2-fbf100e29223",
+      "name": "Save Briefing to Supabase",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "weekly_briefings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.id }}"
+            },
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.current_course }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $('Process One User at a Time').item.json.current_week }}"
+            },
+            {
+              "fieldId": "briefing_text",
+              "fieldValue": "ERROR: Agent failed to generate briefing"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "failed"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -64
+      ],
+      "id": "c949dc7d-3c37-4978-a1a9-96046891ab96",
+      "name": "Log Failed Briefing",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 8am": {
+      "main": [
+        [
+          {
+            "node": "Get All Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Active Users": {
+      "main": [
+        [
+          {
+            "node": "Process One User at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One User at a Time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Briefing Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Briefing via Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Failed Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Briefing Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Briefing via Telegram": {
+      "main": [
+        [
+          {
+            "node": "Save Briefing to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Briefing to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Process One User at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

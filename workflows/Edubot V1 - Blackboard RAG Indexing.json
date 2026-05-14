@@ -1,0 +1,642 @@
+{
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        1104
+      ],
+      "id": "a768b198-a386-4330-baca-ea9b7543526b",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "tableId": "course_materials",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $json.course_name }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $json.week_number }}"
+            },
+            {
+              "fieldId": "content_category",
+              "fieldValue": "={{ $json.content_category }}"
+            },
+            {
+              "fieldId": "knowledge_role",
+              "fieldValue": "={{ $json.knowledge_role }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "source_type",
+              "fieldValue": "={{ $json.source_type }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2336,
+        1104
+      ],
+      "id": "4ea79cc9-aef9-4a1f-835b-f53547ec3916",
+      "name": "Save Material Metadata",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "material_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "m2",
+              "name": "course_name",
+              "value": "={{ $('Document Config').first().json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "m3",
+              "name": "week_number",
+              "value": "={{ $('Document Config').first().json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "m4",
+              "name": "content_category",
+              "value": "={{ $('Document Config').first().json.content_category }}",
+              "type": "string"
+            },
+            {
+              "id": "m5",
+              "name": "knowledge_role",
+              "value": "={{ $('Document Config').first().json.knowledge_role }}",
+              "type": "string"
+            },
+            {
+              "id": "m6",
+              "name": "title",
+              "value": "={{ $('Document Config').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "m7",
+              "name": "google_drive_file_id",
+              "value": "={{ $('Document Config').first().json.google_drive_file_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2112,
+        1104
+      ],
+      "id": "3255a0dc-f67d-47f9-b33b-b2fc289d3096",
+      "name": "Store Material ID"
+    },
+    {
+      "parameters": {
+        "url": "=https://drive.google.com/uc?export=download&id={{ $json.google_drive_file_id }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1872,
+        1104
+      ],
+      "id": "9b783ce2-c464-44d5-865d-744afa3c6908",
+      "name": "Download File from Google Drive"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        1104
+      ],
+      "id": "6982e130-c59e-43b6-aed5-a891e8624b43",
+      "name": "Extract Text from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "raw_text",
+              "value": "={{ String($json.text || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1440,
+        1104
+      ],
+      "id": "85c7a4a0-1093-48f9-a926-c64324d6a30c",
+      "name": "Store Raw Text"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "course_materials",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Store Material ID').first().json.material_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "raw_text",
+              "fieldValue": "={{ $('Store Raw Text').first().json.raw_text.substring(0, 10000) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        1104
+      ],
+      "id": "b6e6afdf-e0ba-458c-a4b0-1729c294f357",
+      "name": "Save Raw Text to Material",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "pvs1",
+              "name": "text",
+              "value": "={{ $('Store Raw Text').first().json.raw_text }}",
+              "type": "string"
+            },
+            {
+              "id": "pvs2",
+              "name": "material_id",
+              "value": "={{ $('Store Material ID').first().json.material_id }}",
+              "type": "string"
+            },
+            {
+              "id": "pvs3",
+              "name": "week_number",
+              "value": "={{ $('Store Material ID').first().json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "pvs4",
+              "name": "course_name",
+              "value": "={{ $('Store Material ID').first().json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "pvs5",
+              "name": "content_category",
+              "value": "={{ $('Store Material ID').first().json.content_category }}",
+              "type": "string"
+            },
+            {
+              "id": "pvs6",
+              "name": "knowledge_role",
+              "value": "={{ $('Store Material ID').first().json.knowledge_role }}",
+              "type": "string"
+            },
+            {
+              "id": "pvs7",
+              "name": "title",
+              "value": "={{ $('Store Material ID').first().json.title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -992,
+        1104
+      ],
+      "id": "a0ef72a2-a4dc-4be2-9dad-e86b4f69c332",
+      "name": "Prepare for Vector Store"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        960
+      ],
+      "id": "941486e3-218f-41f1-b4c2-fa78bb023c07",
+      "name": "Insert into Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "text",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "material_id",
+                "value": "={{ $json.material_id }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $json.week_number }}"
+              },
+              {
+                "name": "course_name",
+                "value": "={{ $json.course_name }}"
+              },
+              {
+                "name": "content_category",
+                "value": "={{ $json.content_category }}"
+              },
+              {
+                "name": "knowledge_role",
+                "value": "={{ $json.knowledge_role }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        1216
+      ],
+      "id": "99375099-aa40-474c-8596-8e708b76fe1b",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        1456
+      ],
+      "id": "35dec09b-e1a4-49ec-9bff-1e71344a5044",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -976,
+        1472
+      ],
+      "id": "b0bffe25-b8a7-4883-93fa-3d03afd5ac1a",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ok1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "ok2",
+              "name": "material_id",
+              "value": "={{ $('Store Material ID').first().json.material_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ok3",
+              "name": "title",
+              "value": "={{ $('Store Material ID').first().json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ok4",
+              "name": "course_name",
+              "value": "={{ $('Store Material ID').first().json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ok5",
+              "name": "week_number",
+              "value": "={{ $('Store Material ID').first().json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "ok6",
+              "name": "message",
+              "value": "=Document indexed successfully. Chunks embedded and stored in document_chunks.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        960
+      ],
+      "id": "26ec80ac-1f2e-4d7c-a072-ba236ff38415",
+      "name": "Indexing Complete"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "course_name",
+              "value": "Programming for AI",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "week_number",
+              "value": 9,
+              "type": "number"
+            },
+            {
+              "id": "d3",
+              "name": "content_category",
+              "value": "seminar",
+              "type": "string",
+              "description": "Options: seminar_ppt | seminar_work | weekly_task | lecture"
+            },
+            {
+              "id": "d4",
+              "name": "knowledge_role",
+              "value": "practical",
+              "type": "string",
+              "description": "Options: theory | practical | task | example"
+            },
+            {
+              "id": "d5",
+              "name": "title",
+              "value": "Deep Q Learning",
+              "type": "string"
+            },
+            {
+              "id": "d6",
+              "name": "source_type",
+              "value": "pdf",
+              "type": "string"
+            },
+            {
+              "id": "d7",
+              "name": "google_drive_file_id",
+              "value": "10hOz0DaM50nByR-kc-6GnhszKdNkpp_K",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2560,
+        1104
+      ],
+      "id": "8007998b-b6e4-47ab-bdeb-2e1a70d2f14c",
+      "name": "Document Config",
+      "notes": "content_category: seminar_ppt | seminar_work | weekly_task | lecture\nknowledge_role: theory | practical | task | example"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Document Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Material Metadata": {
+      "main": [
+        [
+          {
+            "node": "Store Material ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Material ID": {
+      "main": [
+        [
+          {
+            "node": "Download File from Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File from Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from File": {
+      "main": [
+        [
+          {
+            "node": "Store Raw Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Raw Text": {
+      "main": [
+        [
+          {
+            "node": "Save Raw Text to Material",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Raw Text to Material": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Insert into Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert into Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Indexing Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert into Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert into Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Config": {
+      "main": [
+        [
+          {
+            "node": "Save Material Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

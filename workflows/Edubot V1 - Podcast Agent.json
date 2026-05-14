@@ -1,0 +1,781 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": \"uuid-string\",\n  \"course_name\": \"Programming for AI\",\n  \"week_number\": 3,\n  \"pdf_url\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -880,
+        16
+      ],
+      "id": "19eaedbb-7dd9-42aa-b37f-c58ef85680cf",
+      "name": "When Executed by Main Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "course_name",
+              "value": "={{ $json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "week_number",
+              "value": "={{ $json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "p4",
+              "name": "pdf_url",
+              "value": "={{ $json.pdf_url || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -656,
+        16
+      ],
+      "id": "2c88b162-afad-4b62-8f1a-fc44f35a0be3",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-course",
+              "leftValue": "={{ $json.course_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-week",
+              "leftValue": "={{ $json.week_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -432,
+        16
+      ],
+      "id": "a3b929eb-4f84-424a-ac94-4ebce4e5ac55",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "response",
+              "value": "I need to know which course and week to create a podcast for. Could you confirm those details?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        224
+      ],
+      "id": "5f485385-0e33-4fc4-835f-5f58df670c60",
+      "name": "Error - Missing Input"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "generated_assets",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "keyName": "course_name",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.course_name }}"
+            },
+            {
+              "keyName": "week_number",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.week_number }}"
+            },
+            {
+              "keyName": "asset_type",
+              "condition": "eq",
+              "keyValue": "pdf_summary"
+            },
+            {
+              "keyName": "asset_status",
+              "condition": "eq",
+              "keyValue": "ready"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        16
+      ],
+      "id": "b7c41c6c-37a6-40d2-98a8-f0dfc5a03a0d",
+      "name": "Check PDF Summary Exists",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-pdf-exists",
+              "leftValue": "={{ $items(\"Check PDF Summary Exists\").filter(i => i.json.id).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        16
+      ],
+      "id": "fb3d4454-090a-4f78-a09a-c61f2c1e228a",
+      "name": "PDF Summary Exists?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "np1",
+              "name": "response",
+              "value": "=No PDF summary exists yet for *{{ $('Set Input Fields').first().json.course_name }}, Week {{ $('Set Input Fields').first().json.week_number }}*. I'll generate the summary first — please ask me to create a PDF summary for this week, and once it's ready you can request the podcast!",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        176
+      ],
+      "id": "ae57aaa8-02b1-4fa6-9bba-9523920ba4ad",
+      "name": "No PDF - Ask for Summary First"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ps1",
+              "name": "pdf_asset_url ",
+              "value": "={{ $('Check PDF Summary Exists').first().json.asset_url }}",
+              "type": "string"
+            },
+            {
+              "id": "ps2",
+              "name": "pdf_asset_id",
+              "value": "={{ $('Check PDF Summary Exists').first().json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "2e9494fa-6a12-45d8-b9e3-d4984299e1c3",
+      "name": "Store PDF Asset URL"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a natural, engaging podcast script for the following academic content.\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}\n\nUse the search_course_materials tool to retrieve the key concepts, definitions, and theory for this course and week.\n\nThen write a podcast script that:\n1. Has a friendly, conversational tone — like a knowledgeable tutor talking to a student\n2. Covers the most important concepts from the week\n3. Uses simple language to explain complex ideas\n4. Is between 400-600 words — enough for a 3-4 minute podcast\n5. Starts with a brief intro: 'Welcome to Edubot. This week in [course], we're covering...'\n6. Ends with: 'That's all for this week. Good luck with your studies!'\n\nReturn ONLY the script text — no stage directions, no speaker labels, no markdown formatting. Plain text only.",
+        "options": {
+          "systemMessage": "=You are a podcast script writer for Edubot, an MSc AI tutor.\n\nYour job is to write a clear, engaging spoken-word podcast script based on course materials.\n\nRules:\n1. Use search_course_materials to retrieve content — base the script ONLY on what you find.\n2. Write for audio — short sentences, natural rhythm, no bullet points, no headers.\n3. Explain technical concepts simply without dumbing them down.\n4. Target length: 400-600 words.\n5. Plain text only — no markdown, no formatting symbols.\n6. Never hallucinate content.\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        384,
+        -256
+      ],
+      "id": "00bb8770-4169-4fe6-a2f8-298c4c311c14",
+      "name": "Podcast Script Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        16
+      ],
+      "id": "cb21fee5-96ff-4f25-bd32-cb93db30df43",
+      "name": "OpenAI GPT-4o",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Edubot knowledge base for course content to write the podcast script. Filter by course_name and week_number.",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_document_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "course_name",
+                "value": "={{ $('Set Input Fields').first().json.course_name }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $('Set Input Fields').first().json.week_number }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        48
+      ],
+      "id": "85ff0c22-2cac-4f32-9274-16ab2a8a227b",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        224
+      ],
+      "id": "29f9da5f-5109-43ad-b622-eb6f6e7504b2",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sc1",
+              "name": "script_text",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        -336
+      ],
+      "id": "15a30bc1-5035-4599-8b22-57d1e51066bd",
+      "name": "Store Script Text"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "audio_data",
+        "name": "=Edubot_{{ $('Set Input Fields').first().json.course_name.replace(/ /g, '_') }}_Week{{ $('Set Input Fields').first().json.week_number }}_Podcast.mp3",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "=1_o9Y8K8TDJ2yGHZlufKFsJmNv4zNE2q4",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1424,
+        -368
+      ],
+      "id": "a2c59ce1-2bd6-4646-a9d2-f11147f58d29",
+      "name": "Upload Audio to Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ArlJc8tGRg5zNuhl",
+          "name": "EDUBOT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "generated_assets",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $('Set Input Fields').first().json.course_name }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $('Set Input Fields').first().json.week_number }}"
+            },
+            {
+              "fieldId": "asset_type",
+              "fieldValue": "podcast_audio"
+            },
+            {
+              "fieldId": "asset_url",
+              "fieldValue": "={{ $('Upload Audio to Google Drive').first().json.webViewLink }}"
+            },
+            {
+              "fieldId": "asset_status",
+              "fieldValue": "ready"
+            },
+            {
+              "fieldId": "related_asset_id",
+              "fieldValue": "={{ $('Store PDF Asset URL').first().json.pdf_asset_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        -368
+      ],
+      "id": "e343f008-4e56-4aa6-99f8-09b18cb42d7c",
+      "name": "Save Podcast Asset to Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "response",
+              "value": "=🎙️ Your podcast for *{{ $('Set Input Fields').first().json.course_name }} - Week {{ $('Set Input Fields').first().json.week_number }}* is ready!\n\n🎧 [Listen to Podcast]({{ $('Upload Audio to Google Drive').first().json.webViewLink }})\n📄 [View PDF Summary]({{ $('Store PDF Asset URL').first().json.pdf_asset_url }})\n\nEnjoy the listen! Let me know if you have any questions about the content. 🎓",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1872,
+        -368
+      ],
+      "id": "ff85bd30-a5ad-4df8-918f-87777ec71651",
+      "name": "Format Success Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "se1",
+              "name": "response",
+              "value": "Sorry, I had trouble generating the podcast script. Please try again in a moment.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        816,
+        -96
+      ],
+      "id": "6a896ac3-bfb6-44f6-9923-4d0ab816d42f",
+      "name": "Format Script Error"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/{{ $json.voice_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  text: $json.text,\n  model_id: \"eleven_multilingual_v2\",\n  voice_settings: {\n    stability: 0.5,\n    similarity_boost: 0.75,\n    style: 0.3,\n    use_speaker_boost: true\n  }\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "audio_data"
+            }
+          }
+        }
+      },
+      "id": "a1b2a0af-a0b1-4917-80cf-aae27ad95e15",
+      "name": "Generate Audio Segment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        -336
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YYk5v28EL0aSDbsb",
+          "name": "Eleven labs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f9fe2279-3528-4c1b-8d0e-d95f61474dda",
+              "name": "voice_id",
+              "value": "VkNIHVIO5kcN8uNawsuH",
+              "type": "string"
+            },
+            {
+              "id": "c052f5fb-4f4d-45cf-9027-13f144f06f36",
+              "name": "text",
+              "value": "={{ $('Store Script Text').first().json.script_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        -336
+      ],
+      "id": "b7106146-9bf5-4d1a-be64-5a3fb168a41e",
+      "name": "Prepare ElevenLabs Payload"
+    }
+  ],
+  "connections": {
+    "When Executed by Main Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Check PDF Summary Exists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - Missing Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check PDF Summary Exists": {
+      "main": [
+        [
+          {
+            "node": "PDF Summary Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PDF Summary Exists?": {
+      "main": [
+        [
+          {
+            "node": "Store PDF Asset URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No PDF - Ask for Summary First",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store PDF Asset URL": {
+      "main": [
+        [
+          {
+            "node": "Podcast Script Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Podcast Script Agent": {
+      "main": [
+        [
+          {
+            "node": "Store Script Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Script Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Podcast Script Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Podcast Script Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Script Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare ElevenLabs Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Audio to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Save Podcast Asset to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Podcast Asset to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audio Segment": {
+      "main": [
+        [
+          {
+            "node": "Upload Audio to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare ElevenLabs Payload": {
+      "main": [
+        [
+          {
+            "node": "Generate Audio Segment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Main Agent": [
+      {
+        "user_id": "user-uuid-test-123",
+        "course_name": "Programming for AI",
+        "week_number": 3,
+        "pdf_url": ""
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

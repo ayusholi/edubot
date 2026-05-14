@@ -1,0 +1,649 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": \"1456e525-d957-4974-bf6a-ddad4caf20a0\",\n  \"course_name\": \"Programming for AI\",\n  \"week_number\": 3,\n  \"topic\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1408,
+        -192
+      ],
+      "id": "77fef728-df4a-465b-bd97-2e782f89f5ff",
+      "name": "When Executed by Main Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "course_name",
+              "value": "={{ $json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "week_number",
+              "value": "={{ $json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "p4",
+              "name": "topic",
+              "value": "={{ $json.topic || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "file_name",
+              "value": "=Edubot_{{ $json.course_name.replace(/ /g, '_') }}_Week{{ $json.week_number }}{{ $json.topic ? '_' + $json.topic.replace(/ /g, '_') : '' }}_Summary",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        -192
+      ],
+      "id": "0cff4725-d65c-4616-a2fe-a63ca0fd31f6",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-course",
+              "leftValue": "={{ $json.course_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-week",
+              "leftValue": "={{ $json.week_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -960,
+        -192
+      ],
+      "id": "35e9de93-162c-442a-89ab-3426c0b6d943",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "response",
+              "value": "Sorry, I need both a course name and week number to generate a summary. Could you let me know which course and week you'd like?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        144
+      ],
+      "id": "af6db219-6dc3-4c7d-bf79-4206b0fce532",
+      "name": "Error - Missing Input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a comprehensive academic study summary for the following:\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}\n{{ $('Set Input Fields').first().json.topic ? 'Specific topic: ' + $('Set Input Fields').first().json.topic : 'Cover the full week content.' }}\n\nUse the search_course_materials tool to retrieve all relevant content for this course and week from the knowledge base.\n\nThen generate a structured academic summary with these sections:\n1. Week Overview (2-3 sentences)\n2. Key Concepts (bullet points with brief explanations)\n3. Important Definitions (term: definition format)\n4. Core Theory (main theoretical content)\n5. Practical Applications (how concepts are applied)\n6. Exam Tips (what to focus on for assessments)\n7. Further Reading (titles/sources found in the materials)\n\nBase the summary ONLY on retrieved content. Do not invent information.",
+        "options": {
+          "systemMessage": "=You are the PDF Summary Specialist for Edubot, an MSc AI tutor system.\n\nYour job:\n1. Use search_course_materials to retrieve content from Supabase for the given course and week.\n2. Generate a thorough, well-structured academic summary suitable for student revision.\n3. Be accurate — only use what you retrieve, never hallucinate.\n4. Write clearly for postgraduate AI students.\n5. Format your output in clean HTML — it will be converted to a file and shared with the student.\n\nCurrent context:\n- Course: {{ $('Set Input Fields').first().json.course_name }}\n- Week: {{ $('Set Input Fields').first().json.week_number }}\n- Topic filter: {{ $('Set Input Fields').first().json.topic || 'Full week' }}\n\nReturn ONLY inner HTML content for the summary sections.\nDo not include <!DOCTYPE html>, <html>, <head>, <body>, or <style>.\nDo not wrap the response in markdown code fences.\nDo not start with ```html.\nOnly return section-level HTML such as <h2>, <p>, <ul>, <li>, <strong>."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -624,
+        -336
+      ],
+      "id": "e3f30a90-fb6d-488d-8cd2-5bdffd4e460e",
+      "name": "Summary Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -752,
+        64
+      ],
+      "id": "1b8a2880-1e33-4566-9a08-03a6dfd1fc3e",
+      "name": "OpenAI GPT-4o",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Edubot knowledge base for course content. Filter by course_name and week_number to retrieve lectures, seminars, and reading materials for the summary.",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_document_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "course_name",
+                "value": "={{ $('Set Input Fields').first().json.course_name }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $('Set Input Fields').first().json.week_number }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        -96
+      ],
+      "id": "16a3d08f-2fa4-4bb4-a7ac-6b7d657ddfd9",
+      "name": "Supabase Vector Store - document_chunks",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        112
+      ],
+      "id": "585cba23-4d65-4e9d-b599-4661e90f5037",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "summary_text",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        -304
+      ],
+      "id": "f515caf7-74a8-4e36-95aa-348756382d1e",
+      "name": "Store Summary Text"
+    },
+    {
+      "parameters": {
+        "html": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>{{ $('Set Input Fields').first().json.course_name }} - Week {{ $('Set Input Fields').first().json.week_number }} Summary</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      color: #1a1a2e;\n      line-height: 1.6;\n      background: #ffffff;\n      padding: 24px;\n    }\n\n    .header {\n      background: #f3f6fb;\n      color: #1a1a2e;\n      padding: 24px;\n      border: 1px solid #d9e2ef;\n      margin-bottom: 32px;\n    }\n\n    .badge {\n      display: inline-block;\n      color: #0f3460;\n      font-weight: 600;\n      font-size: 12px;\n      margin-bottom: 8px;\n    }\n\n    .header h1 {\n      margin: 8px 0 8px 0;\n      font-size: 26px;\n      font-weight: 700;\n      color: #1a1a2e;\n    }\n\n    .header .subtitle {\n      margin: 0;\n      font-size: 14px;\n      color: #3b4a60;\n    }\n\n    h2 {\n      color: #0f3460;\n      border-left: 4px solid #e94560;\n      padding-left: 12px;\n      margin-top: 30px;\n      font-size: 20px;\n    }\n\n    h3 {\n      color: #16213e;\n      font-size: 16px;\n      margin-top: 20px;\n    }\n\n    p {\n      margin: 10px 0;\n      font-size: 14px;\n    }\n\n    ul {\n      padding-left: 24px;\n      margin-top: 8px;\n      margin-bottom: 16px;\n    }\n\n    li {\n      margin-bottom: 6px;\n      font-size: 14px;\n    }\n\n    strong {\n      color: #0f3460;\n      font-weight: 700;\n    }\n\n    blockquote {\n      border-left: 3px solid #e94560;\n      margin: 16px 0;\n      padding: 8px 16px;\n      background: #f8f9fa;\n    }\n\n    code {\n      background: #f0f0f0;\n      padding: 2px 6px;\n      font-family: \"Courier New\", monospace;\n      font-size: 13px;\n    }\n\n    .footer {\n      margin-top: 48px;\n      padding-top: 20px;\n      border-top: 1px solid #d9e2ef;\n      text-align: center;\n      font-size: 12px;\n      color: #666666;\n    }\n\n    .generated-date {\n      color: #777777;\n      font-size: 11px;\n      margin-top: 4px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"header\">\n    <div class=\"badge\">📚 Edubot Study Summary</div>\n    <h1>{{ $('Set Input Fields').first().json.course_name }}</h1>\n    <p class=\"subtitle\">\n      Week {{ $('Set Input Fields').first().json.week_number }}{{ $('Set Input Fields').first().json.topic ? ' · ' + $('Set Input Fields').first().json.topic : '' }} · MSc Artificial Intelligence · Northumbria University\n    </p>\n  </div>\n\n  {{ $('Clean Summary HTML').first().json.clean_summary_html }}\n\n  <div class=\"footer\">\n    <p>Generated by Edubot AI Tutor</p>\n    <p class=\"generated-date\">{{ $now.toFormat('dd MMMM yyyy, HH:mm') }}</p>\n  </div>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        -304
+      ],
+      "id": "2501e966-b825-410a-b820-f899ab8c38ab",
+      "name": "Build HTML Summary"
+    },
+    {
+      "parameters": {
+        "tableId": "generated_assets",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $('Set Input Fields').first().json.course_name }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $('Set Input Fields').first().json.week_number }}"
+            },
+            {
+              "fieldId": "asset_type",
+              "fieldValue": "pdf_summary"
+            },
+            {
+              "fieldId": "asset_url",
+              "fieldValue": "={{ $('Prepare Google Doc Link').first().json.doc_url }}"
+            },
+            {
+              "fieldId": "asset_status",
+              "fieldValue": "ready"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -304
+      ],
+      "id": "693d048b-e03e-4e5a-b699-7bfcf1af04aa",
+      "name": "Save Asset to Supabase",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "response",
+              "value": "=✅ Your study summary for *{{ $('Set Input Fields').first().json.course_name }} - Week {{ $('Set Input Fields').first().json.week_number }}* is ready!\n\n📄 [Open Summary]({{ $('Prepare Google Doc Link').first().json.doc_url }})\n\nThis summary covers the key concepts, definitions, and exam tips for the week.",
+              "type": "string"
+            },
+            {
+              "id": "r2",
+              "name": "asset_url",
+              "value": "={{ $('Prepare Google Doc Link').first().json.doc_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        -304
+      ],
+      "id": "6335910a-3c07-4971-8f39-d8211cfabc21",
+      "name": "Format Success Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2",
+              "name": "response",
+              "value": "Sorry, I wasn't able to generate the summary right now. This usually means the course materials haven't been uploaded yet for that week. Please try again or contact your tutor.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        -64
+      ],
+      "id": "86ad5bce-3219-40cd-92b3-74ca4af541bb",
+      "name": "Format Agent Error Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "let html = $('Store Summary Text').first().json.summary_text || '';\n\n// Remove markdown code fences if the agent adds them\nhtml = html\n  .replace(/^```html\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/```$/i, '')\n  .trim();\n\n// If the agent returned a full HTML document, keep only the body content\nconst bodyMatch = html.match(/<body[^>]*>([\\s\\S]*?)<\\/body>/i);\nif (bodyMatch) {\n  html = bodyMatch[1].trim();\n}\n\nreturn [\n  {\n    json: {\n      clean_summary_html: html\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -304
+      ],
+      "id": "90093910-7aa9-42d2-b1e5-069df51b4f91",
+      "name": "Clean Summary HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "multipart/related; boundary=foo_bar_baz",
+        "body": "={{\n`--foo_bar_baz\nContent-Type: application/json; charset=UTF-8\n\n${JSON.stringify({\n  name: $('Set Input Fields').first().json.file_name,\n  mimeType: 'application/vnd.google-apps.document',\n  parents: ['1R2OLL8zU7wUGlbh0Z-iI7bbVZVc8sksm']\n})}\n--foo_bar_baz\nContent-Type: text/html; charset=UTF-8\n\n${$('Build HTML Summary').first().json.html}\n--foo_bar_baz--`\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        544,
+        -304
+      ],
+      "id": "a312abfa-b15b-4fea-b1e1-e39325f443d7",
+      "name": "Upload HTML as Google Doc",
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "hJ0Od1JefiK0GFWN",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aab7071f-4cc0-4183-836f-3be3968acb69",
+              "name": "doc_id",
+              "value": "={{ $('Upload HTML as Google Doc').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "eb30d3a4-d777-4801-a147-712c61cbd0cc",
+              "name": "doc_url",
+              "value": "={{ 'https://docs.google.com/document/d/' + $('Upload HTML as Google Doc').first().json.id + '/edit' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -304
+      ],
+      "id": "94ad7f8b-d3d9-454d-9faf-698a35b9a68c",
+      "name": "Prepare Google Doc Link"
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Prepare Google Doc Link').first().json.doc_id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {
+          "sendNotificationEmail": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        -304
+      ],
+      "id": "cad7cd83-2cc6-41be-843e-6025c2665f57",
+      "name": "Share Google Doc",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ArlJc8tGRg5zNuhl",
+          "name": "EDUBOT"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Main Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Summary Specialist Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - Missing Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary Specialist Agent": {
+      "main": [
+        [
+          {
+            "node": "Store Summary Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Agent Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summary Specialist Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store - document_chunks": {
+      "ai_tool": [
+        [
+          {
+            "node": "Summary Specialist Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store - document_chunks",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Summary Text": {
+      "main": [
+        [
+          {
+            "node": "Clean Summary HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML Summary": {
+      "main": [
+        [
+          {
+            "node": "Upload HTML as Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Asset to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Summary HTML": {
+      "main": [
+        [
+          {
+            "node": "Build HTML Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload HTML as Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Prepare Google Doc Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Google Doc Link": {
+      "main": [
+        [
+          {
+            "node": "Share Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Save Asset to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

@@ -1,0 +1,962 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": \"uuid-string\",\n  \"course_name\": \"Programming for AI\",\n  \"week_number\": 3,\n  \"user_message\": \"start quiz\",\n  \"quiz_session\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        2080
+      ],
+      "id": "cf639c39-c6b7-47df-bad4-ca310413b56d",
+      "name": "When Executed by Main Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "user_id",
+              "value": "={{ $('When Executed by Main Agent').first().json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "course_name",
+              "value": "={{ $('When Executed by Main Agent').first().json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "week_number",
+              "value": "={{ $('When Executed by Main Agent').first().json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "p4",
+              "name": "user_message",
+              "value": "={{ $('When Executed by Main Agent').first().json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "p5",
+              "name": "quiz_session",
+              "value": "={{ $('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "p6",
+              "name": "is_answering",
+              "value": "={{ /^[ABCDabcd]$/.test(($('When Executed by Main Agent').first().json.user_message || '').trim()) && (($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) !== '') }}",
+              "type": "boolean"
+            },
+            {
+              "id": "p7",
+              "name": "correct_answer",
+              "value": "={{ ($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) ? (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).correct_answer || '') : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "p8",
+              "name": "is_correct",
+              "value": "={{ /^[ABCDabcd]$/.test(($('When Executed by Main Agent').first().json.user_message || '').trim()) && (($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) !== '') ? (($('When Executed by Main Agent').first().json.user_message || '').trim().toUpperCase() === (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).correct_answer || '').toUpperCase()) : false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "p9",
+              "name": "current_score",
+              "value": "={{ ($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) ? (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).score || 0) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "p10",
+              "name": "question_count",
+              "value": "={{ ($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) ? (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).question_count || 0) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "p11",
+              "name": "new_score",
+              "value": "={{ /^[ABCDabcd]$/.test(($('When Executed by Main Agent').first().json.user_message || '').trim()) && (($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '')) !== '') ? (($('When Executed by Main Agent').first().json.user_message || '').trim().toUpperCase() === (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).correct_answer || '').toUpperCase() ? (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).score || 0) + 1 : (JSON.parse($('When Executed by Main Agent').first().json.quiz_session || ($json.id ? JSON.stringify($json) : '{}')).score || 0)) : 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        2080
+      ],
+      "id": "38bd6351-db54-4403-a388-f6373ec896ae",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "response",
+              "value": "I need to know which course and week you'd like to be quizzed on. Which course are you studying — Programming for AI or Cyber Security?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        2560
+      ],
+      "id": "1664240e-d5bc-4599-b2e9-557d11cc2cb5",
+      "name": "Error - Missing Input"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "quiz_sessions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "score",
+              "fieldValue": "={{ $('Set Input Fields').first().json.new_score }}"
+            },
+            {
+              "fieldId": "last_user_answer",
+              "fieldValue": "={{ $('Set Input Fields').first().json.user_message.toUpperCase() }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        1936
+      ],
+      "id": "e2adb866-5aee-4f42-883b-14f628cadb31",
+      "name": "Update Score in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evaluate this quiz answer:\n\nQuestion: {{ JSON.parse($('Set Input Fields').first().json.quiz_session).current_question }}\n\nOptions:\nA. {{ JSON.parse($('Set Input Fields').first().json.quiz_session).options ? JSON.parse(JSON.parse($('Set Input Fields').first().json.quiz_session).options).A : '' }}\nB. {{ JSON.parse($('Set Input Fields').first().json.quiz_session).options ? JSON.parse(JSON.parse($('Set Input Fields').first().json.quiz_session).options).B : '' }}\nC. {{ JSON.parse($('Set Input Fields').first().json.quiz_session).options ? JSON.parse(JSON.parse($('Set Input Fields').first().json.quiz_session).options).C : '' }}\nD. {{ JSON.parse($('Set Input Fields').first().json.quiz_session).options ? JSON.parse(JSON.parse($('Set Input Fields').first().json.quiz_session).options).D : '' }}\n\nCorrect answer: {{ $('Set Input Fields').first().json.correct_answer }}\nStudent answered: {{ $('Set Input Fields').first().json.user_message.toUpperCase() }}\nIs correct: {{ $('Set Input Fields').first().json.is_correct }}\nNew score: {{ $('Set Input Fields').first().json.new_score }}/{{ $('Set Input Fields').first().json.question_count }}\n\nGenerate the evaluation response.",
+        "options": {
+          "systemMessage": "You are the Quiz Evaluator for Edubot, an MSc AI tutor.\n\nGenerate a clear, encouraging evaluation response.\n\nIf CORRECT:\n✅ Correct! [One sentence explaining WHY this is right.]\n\nScore: X/Y\n\nWould you like another question? Reply *Yes* to continue or *No* to end the quiz.\n\nIf INCORRECT:\n❌ Not quite! The correct answer was *[letter]. [option text]*.\n[One sentence explaining why it's correct.]\n\nScore: X/Y\n\nWould you like another question? Reply *Yes* to continue or *No* to end the quiz.\n\nRules:\n- Keep explanations brief but educational.\n- Be encouraging regardless of the result.\n- Always show the updated score.\n- Always end with the yes/no prompt."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        2080,
+        1776
+      ],
+      "id": "ccaf9288-d97e-42d9-a934-707d76389f94",
+      "name": "Evaluator Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2096,
+        2064
+      ],
+      "id": "cfcdf523-6d8d-4e27-b3dd-3dff75a824b3",
+      "name": "OpenAI GPT-4o (Evaluator)",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate question number {{ $('Set Input Fields').first().json.question_count + 1 }} for:\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}\n\nUse the search_course_materials tool to retrieve relevant content, then generate ONE multiple-choice question. Don't repeat the question.\n\nRespond in EXACTLY this format:\n\n*Question {{ $('Set Input Fields').first().json.question_count + 1 }}:*\n[question text]\n\nA. [option]\nB. [option]\nC. [option]\nD. [option]\n\nCORRECT_ANSWER:[single letter]\nEXPLANATION:[one sentence why]",
+        "options": {
+          "systemMessage": "=You are the Quiz Question Generator for Edubot.\n\nRules:\n1. Use search_course_materials to find content — base question ONLY on what you retrieve.\n2. Generate exactly ONE multiple-choice question with 4 plausible options.\n3. Test real understanding, not just memorisation.\n4. Only one option must be correct.\n5. Never hallucinate.\n6. Always include CORRECT_ANSWER and EXPLANATION markers at the end.\n7. Keep explanation to one sentence.\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1888,
+        2224
+      ],
+      "id": "2ae13b07-719e-40c2-98ae-98e3facfff0d",
+      "name": "Question Generator Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        2480
+      ],
+      "id": "b062a33c-db4c-47b0-bc33-239aac6ca10a",
+      "name": "OpenAI GPT-4o (Generator)",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Edubot knowledge base for course content to generate quiz questions. Filter by course_name and week_number.",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "topK": 8,
+        "options": {
+          "queryName": "match_document_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "course_name",
+                "value": "={{ $('Set Input Fields').first().json.course_name }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $('Set Input Fields').first().json.week_number }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1888,
+        2448
+      ],
+      "id": "7cc480d2-9e37-45c9-8307-78769c827974",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        2704
+      ],
+      "id": "6131551a-a78c-44f9-b428-0e7291760fb9",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || '';\n\nconst answerMatch = raw.match(/CORRECT_ANSWER:\\s*([ABCD])/i);\nconst explanationMatch = raw.match(/EXPLANATION:\\s*(.+?)(?:\\n|$)/i);\n\nconst correctAnswer = answerMatch ? answerMatch[1].toUpperCase() : 'A';\nconst explanation = explanationMatch ? explanationMatch[1].trim() : '';\n\nconst cleanQuestion = raw\n  .replace(/CORRECT_ANSWER:\\s*[ABCD].*/gi, '')\n  .replace(/EXPLANATION:.*/gi, '')\n  .trim();\n\nconst optionA = (raw.match(/^A\\.\\s*(.+)$/m) || [])[1]?.trim() || '';\nconst optionB = (raw.match(/^B\\.\\s*(.+)$/m) || [])[1]?.trim() || '';\nconst optionC = (raw.match(/^C\\.\\s*(.+)$/m) || [])[1]?.trim() || '';\nconst optionD = (raw.match(/^D\\.\\s*(.+)$/m) || [])[1]?.trim() || '';\n\nreturn [{\n  json: {\n    clean_question: cleanQuestion,\n    correct_answer: correctAnswer,\n    explanation: explanation,\n    options: JSON.stringify({ A: optionA, B: optionB, C: optionC, D: optionD }),\n    new_question_count: $('Set Input Fields').first().json.question_count + 1\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        2224
+      ],
+      "id": "8b168a94-1b93-4c8a-b2b7-878112de5304",
+      "name": "Parse Question Output"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "quiz_sessions",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        2224
+      ],
+      "id": "cc159c6a-b864-4930-8250-28739c90934e",
+      "name": "Check Existing Session",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-exists",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        2224
+      ],
+      "id": "ad49b24d-f105-47cf-bc49-2978d6d35f49",
+      "name": "Session Exists?"
+    },
+    {
+      "parameters": {
+        "tableId": "quiz_sessions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "fieldId": "course_name",
+              "fieldValue": "={{ $('Set Input Fields').first().json.course_name }}"
+            },
+            {
+              "fieldId": "week_number",
+              "fieldValue": "={{ $('Set Input Fields').first().json.week_number }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "current_question",
+              "fieldValue": "={{ $('Parse Question Output').first().json.clean_question }}"
+            },
+            {
+              "fieldId": "options",
+              "fieldValue": "={{ $('Parse Question Output').first().json.options }}"
+            },
+            {
+              "fieldId": "correct_answer",
+              "fieldValue": "={{ $('Parse Question Output').first().json.correct_answer }}"
+            },
+            {
+              "fieldId": "score",
+              "fieldValue": "0"
+            },
+            {
+              "fieldId": "question_count",
+              "fieldValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2864,
+        2128
+      ],
+      "id": "02ecfba6-bd76-4d6d-85e0-3b2b202aa6fa",
+      "name": "Create Quiz Session",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "quiz_sessions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set Input Fields').first().json.user_id }}"
+            },
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "current_question",
+              "fieldValue": "={{ $('Parse Question Output').first().json.clean_question }}"
+            },
+            {
+              "fieldId": "options",
+              "fieldValue": "={{ $('Parse Question Output').first().json.options }}"
+            },
+            {
+              "fieldId": "correct_answer",
+              "fieldValue": "={{ $('Parse Question Output').first().json.correct_answer }}"
+            },
+            {
+              "fieldId": "question_count",
+              "fieldValue": "={{ $('Parse Question Output').first().json.new_question_count }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        2304
+      ],
+      "id": "abd87bce-aac7-485c-9301-faedafd1c9e9",
+      "name": "Update Quiz Session",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "response",
+              "value": "={{ $('Parse Question Output').first().json.clean_question }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3072,
+        2224
+      ],
+      "id": "d7a047a5-b521-4c19-b0f5-f731273b608a",
+      "name": "Format Question Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ev1",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2448,
+        1792
+      ],
+      "id": "8a0085fa-4cb5-4357-9bff-e1d1ca083693",
+      "name": "Format Evaluation Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ge1",
+              "name": "response",
+              "value": "Sorry, I couldn't generate a question right now. Course materials for this week may not be uploaded yet.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2192,
+        2400
+      ],
+      "id": "4c94a159-782c-4e72-955f-7b138c0b9c07",
+      "name": "Format Generator Error"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee1",
+              "name": "response",
+              "value": "Sorry, I had trouble evaluating your answer. Please try sending it again.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2464,
+        2000
+      ],
+      "id": "653309ca-66d1-4894-9834-2c9b94ec3c75",
+      "name": "Format Evaluator Error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "check-course",
+              "leftValue": "={{ $json.course_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "1914a387-3095-4f83-8f72-b9111fe96384",
+              "leftValue": "={{ $json.week_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1456,
+        2080
+      ],
+      "id": "7b851b5f-d43d-44a0-835b-1c4377f631d4",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a58a8020-ef3a-4e8d-a688-743d0326574e",
+              "leftValue": "={{ $('Set Input Fields').first().json.is_answering }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1664,
+        2080
+      ],
+      "id": "09a5d185-6e59-49d8-9224-aa124123ff7c",
+      "name": "Answering or Starting"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "quiz_sessions",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('When Executed by Main Agent').first().json.user_id }}"
+            },
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "=true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        2080
+      ],
+      "id": "9c4a5a19-a088-4a42-9288-5c70ed7e5bd5",
+      "name": "Load Active Quiz Session",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Main Agent": {
+      "main": [
+        [
+          {
+            "node": "Load Active Quiz Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Score in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Evaluator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluator Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Evaluation Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Evaluator Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o (Evaluator)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Evaluator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question Generator Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Question Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Generator Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o (Generator)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question Generator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Question Generator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Question Output": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Session": {
+      "main": [
+        [
+          {
+            "node": "Session Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Exists?": {
+      "main": [
+        [
+          {
+            "node": "Update Quiz Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Quiz Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Quiz Session": {
+      "main": [
+        [
+          {
+            "node": "Format Question Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Quiz Session": {
+      "main": [
+        [
+          {
+            "node": "Format Question Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Answering or Starting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - Missing Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answering or Starting": {
+      "main": [
+        [
+          {
+            "node": "Update Score in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Question Generator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Active Quiz Session": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Main Agent": [
+      {
+        "user_id": "13a9a4d1-e59d-4016-bae2-a6dd741b479a",
+        "course_name": "",
+        "week_number": 0,
+        "user_message": "start quiz",
+        "quiz_session": ""
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

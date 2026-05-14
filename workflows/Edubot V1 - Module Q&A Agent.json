@@ -1,0 +1,388 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"user_id\": \"13a9a4d1-e59d-4016-bae2-a6dd741b479a\",\n  \"user_message\": \"What is information risk?\",\n  \"course_name\": \"Cyber Security\",\n  \"week_number\": 1,\n  \"recent_context\": \"\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1488,
+        80
+      ],
+      "id": "57bbbd43-02d3-46f4-9af3-5d599ad3a4ba",
+      "name": "When Executed by Main Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "user_message",
+              "value": "={{ $json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "course_name",
+              "value": "={{ $json.course_name }}",
+              "type": "string"
+            },
+            {
+              "id": "p4",
+              "name": "week_number",
+              "value": "={{ $json.week_number }}",
+              "type": "number"
+            },
+            {
+              "id": "p5",
+              "name": "recent_context",
+              "value": "={{ $json.recent_context || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1264,
+        80
+      ],
+      "id": "121e81d2-bbf4-47f8-9f76-40a528a9ba78",
+      "name": "Set Input Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-course",
+              "leftValue": "={{ $json.course_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check-week",
+              "leftValue": "={{ $json.week_number }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1056,
+        80
+      ],
+      "id": "920a9a7f-4635-4c4d-a0c1-1710ad92ef12",
+      "name": "Validate Course and Week"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "response",
+              "value": "I need both the course name and week number before I can answer from the course materials.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1056,
+        336
+      ],
+      "id": "d03b9d72-3968-4dd0-b12b-b23f96f48653",
+      "name": "Error - Missing Input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The student asked: {{ $('Set Input Fields').first().json.user_message }}\n\nCourse: {{ $('Set Input Fields').first().json.course_name }}\nWeek: {{ $('Set Input Fields').first().json.week_number }}\nRecent context: {{ $('Set Input Fields').first().json.recent_context || 'None' }}\n\nUse the search_course_materials tool to retrieve relevant content from the knowledge base for this specific course and week. Then answer the student's question clearly and accurately based ONLY on what you find. If no relevant content is found, say so explicitly — do not invent information.",
+        "options": {
+          "systemMessage": "=You are the Module Q&A Specialist for Edubot, an AI tutor for MSc Artificial Intelligence students.\n\nYour ONLY job is:\n1. Use the search_course_materials tool to search the Supabase knowledge base for content matching the student's question, course, and week.\n2. Generate a clear, accurate, pedagogically sound answer based ONLY on retrieved content.\n3. If no content is found, return an honest error — never hallucinate.\n4. Never guess or use general knowledge outside of what is retrieved.\n5. Format your answer in clean Markdown suitable for Telegram.\n6. At the end of your response, list the sources you used (document title and content category).\n\nCurrent course context:\n- Course: {{ $('Set Input Fields').first().json.course_name }}\n- Week: {{ $('Set Input Fields').first().json.week_number }}\n\nIMPORTANT: Only retrieve chunks where course_name = '{{ $('Set Input Fields').first().json.course_name }}' and week_number = {{ $('Set Input Fields').first().json.week_number }}. Never retrieve from other courses or weeks unless explicitly asked."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -736,
+        -128
+      ],
+      "id": "8fb81560-4fc4-4e2f-b778-bacc2a7d11a9",
+      "name": "Q&A Specialist Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -784,
+        128
+      ],
+      "id": "488196ce-a156-4288-9d2a-7f3ad9ad447d",
+      "name": "OpenAI GPT-4o",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Edubot knowledge base for course content. Always filter by course_name and week_number. Returns relevant chunks from lectures, seminars, readings, and labs. Use this to answer the student's question accurately.",
+        "tableName": {
+          "__rl": true,
+          "value": "document_chunks",
+          "mode": "list",
+          "cachedResultName": "document_chunks"
+        },
+        "topK": 6,
+        "options": {
+          "queryName": "match_document_chunks",
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "course_name",
+                "value": "={{ $('Set Input Fields').first().json.course_name }}"
+              },
+              {
+                "name": "week_number",
+                "value": "={{ $('Set Input Fields').first().json.week_number }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -736,
+        352
+      ],
+      "id": "6e5bb53d-e9d9-4e11-a0c6-7d11a26bb7a4",
+      "name": "Supabase Vector Store - document_chunks",
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        528
+      ],
+      "id": "2d2b762b-9ed1-451c-98ef-e8af82a5a7de",
+      "name": "OpenAI Embeddings",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        -32
+      ],
+      "id": "f6c06e70-e8e1-4d07-a853-d7ce9b7cbbee",
+      "name": "Format Success Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2",
+              "name": "response",
+              "value": "=Sorry, I couldn't find relevant content for Week {{ $('Set Input Fields').first().json.week_number }} of {{ $('Set Input Fields').first().json.course_name }}. Please try rephrasing or check that the content has been uploaded.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        176
+      ],
+      "id": "4a8c09cb-80e4-445f-ba5f-7073778860ba",
+      "name": "Format Agent Error Response"
+    }
+  ],
+  "connections": {
+    "When Executed by Main Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Input Fields": {
+      "main": [
+        [
+          {
+            "node": "Validate Course and Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Course and Week": {
+      "main": [
+        [
+          {
+            "node": "Q&A Specialist Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - Missing Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Q&A Specialist Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Agent Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Q&A Specialist Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store - document_chunks": {
+      "ai_tool": [
+        [
+          {
+            "node": "Q&A Specialist Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store - document_chunks",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "When Executed by Main Agent": [
+      {
+        "user_id": "13a9a4d1-e59d-4016-bae2-a6dd741b479a",
+        "user_message": "What is a decision tree?",
+        "course_name": "",
+        "week_number": 0,
+        "recent_context": ""
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}

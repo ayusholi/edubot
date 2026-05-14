@@ -1,0 +1,1236 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract Fields1').first().json.chat_id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6640,
+        11664
+      ],
+      "id": "846d1836-2f25-44d9-a838-3b45f5039e90",
+      "name": "Send to Telegram1",
+      "webhookId": "d41eb036-5371-43b6-b225-9af62d066ea9",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "save_conversation",
+        "description": "Call this tool at the END of every turn to save the student message and your reply to Supabase. Always call this LAST. Requires: user_id, user_message, assistant_reply, telegram_message_id. Optionally: detected_intent, course_name, week_number.",
+        "workflowId": {
+          "__rl": true,
+          "value": "z9MRxUY3MBx9Xa5j",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/z9MRxUY3MBx9Xa5j",
+          "cachedResultName": "Edubot — Save Conversation"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "user_message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_message', ``, 'string') }}",
+            "assistant_reply": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('assistant_reply', ``, 'string') }}",
+            "detected_intent": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('detected_intent', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}",
+            "telegram_message_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('telegram_message_id', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_message",
+              "displayName": "user_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "assistant_reply",
+              "displayName": "assistant_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "detected_intent",
+              "displayName": "detected_intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "telegram_message_id",
+              "displayName": "telegram_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        7360,
+        11936
+      ],
+      "id": "3063e6ad-77c1-4402-bc2d-80edf881b291",
+      "name": "save_conversation1"
+    },
+    {
+      "parameters": {
+        "name": "update_user_context",
+        "description": "Call this tool whenever the student confirms or changes their current course or week number. This persists the change to Supabase. Requires: user_id, course_name, week_number.",
+        "workflowId": {
+          "__rl": true,
+          "value": "OzGgkTD04dXs0uDs",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/OzGgkTD04dXs0uDs",
+          "cachedResultName": "Edubot — Update User Context"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        7232,
+        12080
+      ],
+      "id": "7cfd865e-9143-4aa5-9462-d1157a7e52c0",
+      "name": "update_user_context1"
+    },
+    {
+      "parameters": {
+        "name": "weekly_briefing_agent",
+        "description": "Call this tool to generate a short weekly learning briefing for the student. Requires: user_id, course_name, week_number.",
+        "workflowId": {
+          "__rl": true,
+          "value": "1kmdEcMW2DzMVuzk",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/1kmdEcMW2DzMVuzk",
+          "cachedResultName": "Edubot V1 - Weekly Briefing Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        7024,
+        12032
+      ],
+      "id": "dee4a2c6-133f-42c2-bbfb-be66c2b5732f",
+      "name": "weekly_briefing_agent1"
+    },
+    {
+      "parameters": {
+        "name": "practical_task_agent",
+        "description": "Call this tool to retrieve a practical coding guide link for the student. Fetches from our custom practice guides table — does NOT generate new content. Requires: user_id, course_name, week_number.",
+        "workflowId": {
+          "__rl": true,
+          "value": "BJH6tGrnbrxh6rIB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/BJH6tGrnbrxh6rIB",
+          "cachedResultName": "Edubot V1 - Practical Task Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        6848,
+        12016
+      ],
+      "id": "f9a0fb1c-874c-4ed5-90dc-8c63cd3df892",
+      "name": "practical_task_agent1"
+    },
+    {
+      "parameters": {
+        "name": "quiz_agent",
+        "description": "Call this tool to start or continue an interactive quiz. Requires: user_id, course_name, week_number, user_message. The Quiz Agent will load any active quiz session from Supabase by itself, so do not pass quiz_session manually.",
+        "workflowId": {
+          "__rl": true,
+          "value": "H5F9siySntIPNibq",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/H5F9siySntIPNibq",
+          "cachedResultName": "Edubot V1 - Quiz Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}",
+            "user_message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_message', ``, 'string') }}",
+            "quiz_session": "={{ \"\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "user_message",
+              "displayName": "user_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "quiz_session",
+              "displayName": "quiz_session",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        6736,
+        12144
+      ],
+      "id": "5c2c6d8c-8320-4e8a-a251-88a946ae52a8",
+      "name": "quiz_agent1"
+    },
+    {
+      "parameters": {
+        "name": "podcast_agent",
+        "description": "Call this tool ONLY AFTER pdf_summary_agent has returned a pdf_url. Converts a PDF summary into a podcast audio. Requires: user_id, course_name, week_number, pdf_url.",
+        "workflowId": {
+          "__rl": true,
+          "value": "08JLSD933Y4b6aQm",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/08JLSD933Y4b6aQm",
+          "cachedResultName": "Edubot V1 - Podcast Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}",
+            "pdf_url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('pdf_url', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "pdf_url",
+              "displayName": "pdf_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        6592,
+        12080
+      ],
+      "id": "c22d82a8-7ae9-4d2a-832c-318c1656defb",
+      "name": "podcast_agent1"
+    },
+    {
+      "parameters": {
+        "name": "pdf_summary_agent",
+        "description": "Call this tool to generate a PDF summary for a course week. Requires: user_id, course_name, week_number. Optionally: topic.",
+        "workflowId": {
+          "__rl": true,
+          "value": "UfdJcMegolhxWSJg",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/UfdJcMegolhxWSJg",
+          "cachedResultName": "Edubot V1 - PDF Summary Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}",
+            "topic": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('topic', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "topic",
+              "displayName": "topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        6432,
+        12112
+      ],
+      "id": "2bf27364-b471-4d20-b676-b1cf34c387c6",
+      "name": "pdf_summary_agent1"
+    },
+    {
+      "parameters": {
+        "name": "module_qa_agent",
+        "description": "Call this tool to answer student questions about course content, theory, or concepts. Requires: user_id, user_message, course_name, week_number.",
+        "workflowId": {
+          "__rl": true,
+          "value": "eUJUaUeHMlXdARyW",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/eUJUaUeHMlXdARyW",
+          "cachedResultName": "Edubot V1 - Module Q&A Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "week_number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('week_number', ``, 'number') }}",
+            "user_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_id', ``, 'string') }}",
+            "user_message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_message', ``, 'string') }}",
+            "course_name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('course_name', ``, 'string') }}",
+            "recent_context": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('recent_context', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "user_message",
+              "displayName": "user_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "course_name",
+              "displayName": "course_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "week_number",
+              "displayName": "week_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "recent_context",
+              "displayName": "recent_context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        6288,
+        12016
+      ],
+      "id": "cab1b128-a19d-4830-b5b3-534a2cc5be35",
+      "name": "module_qa_agent1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Fields1').first().json.chat_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        6176,
+        11952
+      ],
+      "id": "db41cc44-e7c3-40b1-8bdc-499d48e90308",
+      "name": "Window Buffer Memory1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        6032,
+        11952
+      ],
+      "id": "35d9abf2-95a7-4a5d-88a7-c103ab266a5b",
+      "name": "OpenAI GPT-4o1",
+      "credentials": {
+        "openAiApi": {
+          "id": "dUqXWX5D1wE0VQKT",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt_text }}",
+        "options": {
+          "systemMessage": "=You are Edubot, an AI tutor assistant for MSc Artificial Intelligence students at Northumbria University London.\nYou are the ONLY interface the student talks to. You are the Main Agent — a project manager and tutor coordinator.\n\n## Your responsibilities\n1. Understand what the student needs from their message and context.\n2. ALWAYS confirm course AND week before calling any academic specialist tool. If either is unknown, ask the student first — do not guess.\n3. Delegate to the correct specialist tool — NEVER invent academic content yourself.\n4. When a specialist tool returns a response, send it to the student exactly as returned — do not rephrase or summarise it.\n5. Respond in a friendly, concise, encouraging tutoring tone.\n6. If a student is in active quiz mode and sends A, B, C, or D — route directly to quiz_agent without re-asking for intent.\n7. If a student requests a podcast but no PDF exists yet, call pdf_summary_agent FIRST, then podcast_agent.\n8. If course or week changes, call update_user_context immediately.\n9. At the end of EVERY response, you MUST call save_conversation — no exceptions, even for simple greetings.\n\n## Available courses\n- Programming for AI\n- Cyber Security\n\n## Specialist tools\n- module_qa_agent: Answer questions about course theory and concepts.\n- pdf_summary_agent: Generate a PDF summary for a course week.\n- podcast_agent: Generate podcast audio. Only call AFTER pdf_summary_agent.\n- quiz_agent: Start or continue an interactive multiple-choice quiz.\n- practical_task_agent: Retrieve a custom practical coding guide link.\n- weekly_briefing_agent: Get this week's short learning briefing.\n- update_user_context: Update the student's current course and week.\n- save_conversation: Save the exchange to Supabase.\n\n## CRITICAL RULES\n\n### Tool input rules\n- Always pass week_number as a NUMBER not a string. Example: 3 not \"3\".\n- Always pass course_name exactly as written in Available courses — case sensitive.\n- Always pass user_id from the student context provided in every message.\n\n### Week number conversion rules\n- Students may say the week in different ways. Always convert to an integer number before passing to any tool.\n- Examples of conversions:\n  - \"week four\" → 4\n  - \"fourth week\" → 4\n  - \"the fourth one\" → 4\n  - \"week 4\" → 4\n  - \"semana 4\" → 4\n  - \"cuarta semana\" → 4\n- If the student says something ambiguous like \"this week\" or \"current week\", check the student context provided — use the current_week value if it is set. If not set, ask the student to confirm which week number.\n- Never pass words like \"four\" as the week value — always convert to the integer first.\n- Valid week values are 1 through 11 for Programming for AI and 1 through 10 for Cyber Security. If the student gives a number outside this range, ask them to confirm.\n\n### save_conversation rules\n- Call save_conversation as the VERY LAST action of every turn.\n- Pass exactly these values:\n  - user_id: the user internal ID from context\n  - user_message: the exact text the student sent\n  - assistant_reply: the exact text you are sending back to the student\n  - detected_intent: which tool you called (or \"small_talk\" if none)\n  - course_name: current course or empty string if unknown\n  - week_number: current week as a number or 0 if unknown\n  - telegram_message_id: the Telegram Message ID from context\n\n### General rules\n- NEVER invent course content. Always use a specialist tool.\n- NEVER call an academic tool without knowing both course AND week.\n- If the student asks something off-topic, respond briefly and redirect to their studies.\n- Never include any signature, footer, or attribution text at the end of your responses. Do not mention n8n, automation, or any technical infrastructure.\n- The current date is: {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        6336,
+        11664
+      ],
+      "id": "1fc879a3-68b2-4731-b8fe-2298430e5023",
+      "name": "Edubot Main Agent1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "prompt_text",
+              "value": "=User message: {{ $('Extract Fields1').first().json.user_message }}\n\nIMPORTANT: The latest user message is the main instruction for this turn. Use the recent conversation only as optional context. If the latest message introduces a new topic or contradicts previous context, prioritize the latest message.\n\nStudent context:\n- First name: {{ $('Normalize User ID1').first().json.first_name }}\n- User internal ID: {{ $('Normalize User ID1').first().json.id }}\n- Chat ID: {{ $('Extract Fields1').first().json.chat_id }}\n- Telegram Message ID: {{ $('Extract Fields1').first().json.telegram_message_id }}\n- Current course: {{ $('Normalize User ID1').first().json.current_course || 'Not set' }}\n- Current week: {{ $('Normalize User ID1').first().json.current_week || 'Not set' }}\n\nRecent conversation (last 10, newest first):\n{{ $('Prepare Conversation History').first().json.recent_conversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6064,
+        11664
+      ],
+      "id": "f0bde115-2d03-446c-bff8-84c740b50eaa",
+      "name": "Build Agent Prompt1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        11200
+      ],
+      "id": "45309e73-71fa-4cec-9683-a3671d5bbf1e",
+      "name": "Telegram Trigger1",
+      "webhookId": "fc7c69d4-295a-4bef-aff1-bfa5f31c8a60",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZIPMmRDm8REbSsV9",
+          "name": "Edubot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef1",
+              "name": "telegram_user_id",
+              "value": "={{ $json.message.from.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ef2",
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ef3",
+              "name": "first_name",
+              "value": "={{ $json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ef4",
+              "name": "username",
+              "value": "={{ $json.message.from.username }}",
+              "type": "string"
+            },
+            {
+              "id": "ef5",
+              "name": "user_message",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "ef6",
+              "name": "telegram_message_id",
+              "value": "={{ $json.message.message_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4800,
+        11200
+      ],
+      "id": "ac99876e-a085-4b41-8c72-f9f94194013a",
+      "name": "Extract Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_user_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.telegram_user_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4992,
+        11200
+      ],
+      "id": "a9a148f0-ea3a-4b3e-b406-f015dddfd8e1",
+      "name": "Find User1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "users",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telegram_user_id",
+              "fieldValue": "={{ $('Normalize User ID1').first().json.id }}"
+            },
+            {
+              "fieldId": "telegram_chat_id",
+              "fieldValue": "={{ $('Extract Fields1').first().json.chat_id }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $('Extract Fields1').first().json.first_name }}"
+            },
+            {
+              "fieldId": "username",
+              "fieldValue": "={{ $('Extract Fields1').first().json.username }}"
+            },
+            {
+              "fieldId": "current_course",
+              "fieldValue": "={{\"\"}}"
+            },
+            {
+              "fieldId": "current_week",
+              "fieldValue": "0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5536,
+        11072
+      ],
+      "id": "e2e3a753-2371-4d70-a422-5227e064a09e",
+      "name": "Create User1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nu1",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "nu2",
+              "name": "first_name",
+              "value": "={{ $json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "nu3",
+              "name": "current_course",
+              "value": "={{ $json.current_course }}",
+              "type": "string"
+            },
+            {
+              "id": "nu4",
+              "name": "current_week",
+              "value": "={{ $json.current_week }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5792,
+        11200
+      ],
+      "id": "5c872d16-4f52-477e-b9ff-e87ff90c7ad8",
+      "name": "Normalize User ID1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "conversations",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Normalize User ID1').first().json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6000,
+        11200
+      ],
+      "id": "06e7e7f6-d725-490e-b9c3-1a7dc55156b3",
+      "name": "Load Conversation History1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "OWTKiiMsz98vBo5M",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e5c18297-0185-496a-8871-370933e00b41",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5296,
+        11200
+      ],
+      "id": "89f78aaf-2b45-4f1a-97f7-eb63625aae7e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const messages = $input.all()\n  .filter(item => item.json && item.json.message_text)\n  .map(item => item.json);\n\n// Optional: sort oldest to newest if created_at exists\nmessages.sort((a, b) => {\n  const dateA = new Date(a.created_at || 0).getTime();\n  const dateB = new Date(b.created_at || 0).getTime();\n  return dateA - dateB;\n});\n\nconst recentConversation = messages.length > 0\n  ? messages\n      .map(m => {\n        const speaker = m.role === 'user' ? 'Student' : 'Edubot';\n        return `${speaker}: ${m.message_text}`;\n      })\n      .join('\\n')\n  : 'No previous messages.';\n\nreturn [\n  {\n    json: {\n      recent_conversation: recentConversation\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6032,
+        11424
+      ],
+      "id": "0aa6236b-6a1a-4323-a60d-773b69d34bce",
+      "name": "Prepare Conversation History"
+    }
+  ],
+  "connections": {
+    "save_conversation1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update_user_context1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "weekly_briefing_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "practical_task_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "quiz_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "podcast_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pdf_summary_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "module_qa_agent1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT-4o1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edubot Main Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Prompt1": {
+      "main": [
+        [
+          {
+            "node": "Edubot Main Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Extract Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Fields1": {
+      "main": [
+        [
+          {
+            "node": "Find User1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create User1": {
+      "main": [
+        [
+          {
+            "node": "Normalize User ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize User ID1": {
+      "main": [
+        [
+          {
+            "node": "Load Conversation History1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Conversation History1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create User1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize User ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Conversation History": {
+      "main": [
+        [
+          {
+            "node": "Build Agent Prompt1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "003f7a4d56fcd4014579fe67a919f4803674097dac75a797d418243404702c17"
+  }
+}
