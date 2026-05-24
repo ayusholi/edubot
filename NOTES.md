@@ -1,7 +1,7 @@
 # Notes
 
-Last updated: 2026-05-24T13:00:01.113Z
+Session: 2026-05-24T13:00:01.113Z
 
-## Progress
+## Summary
 
-- mock external dependencies in tests
+- resolve memory leak in event listener
