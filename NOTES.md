@@ -1,7 +1,7 @@
 # Notes
 
-Session: 2026-05-24T13:00:01.113Z
+Last updated: 2026-06-07T13:00:01.063Z
 
-## Summary
+## Progress
 
-- resolve memory leak in event listener
+- add rate limiting to API endpoints
